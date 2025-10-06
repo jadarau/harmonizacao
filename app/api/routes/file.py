@@ -1,8 +1,7 @@
-from __future__ import annotations
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 router = APIRouter()
 
-@router.get("/status")
-async def file_status():
-    return {"status": "ok", "message": "File API is running"}
+@router.get("/")
+def home():
+    return { "content": "Bem vindo ao anexo de arquivos" }
