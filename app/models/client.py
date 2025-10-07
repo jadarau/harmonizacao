@@ -51,7 +51,7 @@ class Cliente(BaseModel):
             raise ValueError("Data de nascimento deve estar no formato YYYY-MM-DD")
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "nome": "João Silva Santos",
                 "telefone": ["11987654321", "1133334444"],

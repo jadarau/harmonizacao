@@ -22,7 +22,7 @@ class Endereco(BaseModel):
         return cep_clean
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "logradouro": "Rua das Flores",
                 "numero": "123",
