@@ -10,6 +10,7 @@ class Cliente(BaseModel):
     telefone: List[str] = Field(default_factory=list, description="Lista de telefones do cliente")
     email: List[str] = Field(default_factory=list, description="Lista de emails do cliente")
     nascimento: str = Field(..., description="Data de nascimento (formato: YYYY-MM-DD)")
+    origem: Optional[str] = Field(None, description="Origem do cliente (ex: website, indicação, etc.)")
     enderecos: List[Endereco] = Field(default_factory=list, description="Lista de endereços do cliente")
 
     @validator("telefone")
@@ -57,6 +58,7 @@ class Cliente(BaseModel):
                 "telefone": ["11987654321", "1133334444"],
                 "email": ["joao@email.com", "joao.silva@empresa.com"],
                 "nascimento": "1990-05-15",
+                "origem": "website",
                 "enderecos": [
                     {
                         "logradouro": "Rua das Flores",
