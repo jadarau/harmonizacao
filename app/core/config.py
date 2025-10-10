@@ -20,6 +20,33 @@ class AppSettings(BaseSettings):
     mongodb_database: str = Field(default="harmonizacao", env="MONGODB_DATABASE")
     mongodb_collection_clientes: str = Field(default="clientes", env="MONGODB_COLLECTION_CLIENTES")
 
+    # RAG Settings
+    # Embedding service configuration
+    embedding_service_type: str = Field(default="sentence_transformer", env="EMBEDDING_SERVICE_TYPE")
+    embedding_model_name: str = Field(default="all-MiniLM-L6-v2", env="EMBEDDING_MODEL_NAME")
+    openai_api_key: str = Field(default="", env="OPENAI_API_KEY")
+    
+    # Vector store configuration
+    vector_store_type: str = Field(default="chroma", env="VECTOR_STORE_TYPE")
+    vector_store_path: str = Field(default="./data/vectorstore", env="VECTOR_STORE_PATH")
+    chroma_collection_name: str = Field(default="harmonizacao_docs", env="CHROMA_COLLECTION_NAME")
+    
+    # Document processing settings
+    default_chunk_size: int = Field(default=1000, env="DEFAULT_CHUNK_SIZE")
+    default_chunk_overlap: int = Field(default=200, env="DEFAULT_CHUNK_OVERLAP")
+    default_chunking_strategy: str = Field(default="recursive", env="DEFAULT_CHUNKING_STRATEGY")
+    
+    # Retrieval settings
+    default_max_results: int = Field(default=5, env="DEFAULT_MAX_RESULTS")
+    default_min_score: float = Field(default=0.3, env="DEFAULT_MIN_SCORE")
+    
+    # File upload settings
+    max_file_size_mb: int = Field(default=50, env="MAX_FILE_SIZE_MB")
+    allowed_file_extensions: List[str] = Field(
+        default_factory=lambda: [".txt", ".md", ".pdf", ".docx", ".doc"],
+        env="ALLOWED_FILE_EXTENSIONS"
+    )
+
     @field_validator("cors_allow_origins", mode="before")
     def parse_cors_allow_origins(cls, v: Union[str, List[str], None]) -> List[str]:
         if v is None:
@@ -35,6 +62,16 @@ class AppSettings(BaseSettings):
                 except json.JSONDecodeError:
                     return [i.strip() for i in v.split(",")]
             return [i.strip() for i in v.split(",")]
+        return v
+    
+    @field_validator("allowed_file_extensions", mode="before")
+    def parse_allowed_extensions(cls, v: Union[str, List[str], None]) -> List[str]:
+        if v is None:
+            return [".txt", ".md", ".pdf", ".docx", ".doc"]
+        if isinstance(v, str):
+            extensions = [ext.strip() for ext in v.split(",") if ext.strip()]
+            # Ensure extensions start with dot
+            return [ext if ext.startswith(".") else f".{ext}" for ext in extensions]
         return v
 
     model_config = {

@@ -1,6 +1,6 @@
-# 🎯 Harmonização - API FastAPI + MongoDB + IA
+# 🎯 Harmonização AI - Sistema RAG Avançado
 
-Sistema completo de harmonização com API REST, banco de dados e integração com IA.
+Um sistema de Retrieval-Augmented Generation (RAG) robusto e escalável construído com FastAPI, integrando LLMs com busca semântica para respostas baseadas em documentos, além de gerenciamento completo de clientes com MongoDB.
 
 ## 🚀 Início Rápido
 
@@ -12,12 +12,50 @@ cd docker
 
 ### **Local (Desenvolvimento)**
 ```powershell
-pip install -r requirements.txt
+pip insta## 💡 Dicas
+
+### **Sistema de Clientes**
+- ✅ Use `.\start.ps1` para inicialização automática
+- ✅ Acesse `/docs` para testar endpoints interativamente  
+- ✅ Logs em tempo real: `docker-compose logs -f`
+- ✅ Dados persistem em `C:\projects\db\harmonizacao\`
+- ✅ Hot reload ativo durante desenvolvimento
+
+### **Sistema RAG**
+- 🧠 Use **sentence_transformer** para começar (gratuito)
+- 📄 Prefira documentos **PDF** e **MD** para melhor extração
+- 🔍 Configure **chunk_size=1000** e **overlap=200** como padrão
+- 📊 Monitore métricas em `/v1/rag/stats`
+- 🎯 Use **min_relevance_score=0.3** para filtragem de qualidade
+
+## 🤝 Contribuição
+
+1. Fork do projeto
+2. Criar branch para feature (`git checkout -b feature/nova-funcionalidade`)
+3. Commit das mudanças (`git commit -am 'Adiciona nova funcionalidade'`)
+4. Push para o branch (`git push origin feature/nova-funcionalidade`)
+5. Criar Pull Request
+
+## 🆘 Suporte
+
+Para dúvidas e suporte:
+- 📂 Abra uma issue no GitHub
+- 📖 Consulte a documentação da API em `/docs` (Swagger UI)
+- 📋 Verifique os logs em `./logs/` ou `docker-compose logs`
+- 💬 Chat com sistema RAG para dúvidas sobre documentosequirements.txt
 uvicorn app.main:app --reload
 ```
 
 ## 📋 Funcionalidades
 
+### Sistema RAG (Retrieval-Augmented Generation)
+- 🧠 **Chat Inteligente com RAG**: Respostas baseadas em documentos indexados
+- 📄 **Gerenciamento de Documentos**: Upload multi-formato (PDF, TXT, MD, DOCX)
+- 🔍 **Busca Semântica Avançada**: Embeddings e vector store para alta performance
+- 📊 **Chunking Adaptativo**: Estratégias otimizadas de segmentação
+- 🎯 **Citação de Fontes**: Referências automáticas aos documentos utilizados
+
+### Sistema de Clientes
 - ✅ **API REST** completa com FastAPI
 - ✅ **CRUD de Clientes** com validação
 - ✅ **MongoDB** com collections automáticas
@@ -27,13 +65,35 @@ uvicorn app.main:app --reload
 
 ## 🌐 Endpoints Principais
 
+### Sistema de Clientes
 | Endpoint | Método | Descrição |
 |----------|--------|-----------|
 | `/docs` | GET | Documentação interativa |
 | `/v1/cliente/formulario` | POST | Criar cliente via formulário |
 | `/v1/cliente/` | GET | Listar clientes |
 | `/v1/cliente/{id}` | GET/PUT/DELETE | CRUD cliente específico |
-| `/v1/chat` | POST | Chat com IA |
+
+### Chat e Conversação
+| Endpoint | Método | Descrição |
+|----------|--------|-----------|
+| `/v1/chat` | POST | Chat tradicional (sem RAG) |
+| `/v1/rag/chat` | POST | Chat com RAG |
+| `/v1/rag/chat/stream` | POST | Chat RAG com streaming |
+
+### Gerenciamento de Documentos RAG
+| Endpoint | Método | Descrição |
+|----------|--------|-----------|
+| `/v1/rag/documents/upload` | POST | Upload de documento |
+| `/v1/rag/documents/{id}/index` | POST | Indexar documento |
+| `/v1/rag/documents/upload-and-index` | POST | Upload + indexação automática |
+| `/v1/rag/documents` | GET | Listar documentos |
+| `/v1/rag/documents/{id}` | GET/DELETE | Detalhes/deletar documento |
+| `/v1/rag/documents/search` | POST | Busca semântica |
+| `/v1/rag/stats` | GET | Estatísticas do sistema |
+
+### Sistema Geral
+| Endpoint | Método | Descrição |
+|----------|--------|-----------|
 | `/v1/healthz` | GET | Health check |
 
 ## 🏗️ Arquitetura
@@ -43,13 +103,20 @@ FastAPI App (Port 8000)
 ├── 🌐 API Routes
 │   ├── Cliente (CRUD + MongoDB)
 │   ├── Chat (Groq LLM) 
+│   ├── RAG (Document processing & semantic search)
 │   └── File (Upload/Download)
 ├── 🗄️ MongoDB (Port 27017)
 │   ├── Database: harmonizacao
 │   ├── Collection: clientes
 │   └── Dados: C:\projects\db\harmonizacao\
+├── 🧠 Sistema RAG
+│   ├── rag/embeddings/     # Serviços de embeddings
+│   ├── rag/vectorstore/    # Armazenamento vetorial (Chroma DB)
+│   ├── rag/loaders/        # Carregadores multi-formato
+│   ├── rag/chunking/       # Estratégias de segmentação
+│   └── rag/retrieval/      # Serviços de busca semântica
 └── 🤖 IA Integration
-    └── Groq API
+    └── Groq API (LLM + RAG-enhanced responses)
 ```
 
 ## 📂 Estrutura do Projeto
@@ -58,11 +125,25 @@ FastAPI App (Port 8000)
 harmonizacao/
 ├── app/                    # Código da aplicação
 │   ├── main.py            # FastAPI app principal
-│   ├── models/            # Modelos Pydantic
+│   ├── models/            # Modelos Pydantic (Cliente, Endereco, Documents)
 │   ├── api/routes/        # Endpoints REST
+│   │   ├── cliente.py     # CRUD clientes
+│   │   ├── chat.py        # Chat tradicional
+│   │   ├── rag.py         # Sistema RAG
+│   │   └── file.py        # Upload de arquivos
 │   ├── database/          # MongoDB connection & repository
 │   ├── llm/              # Integração com IA
-│   └── schemas/          # Validação de dados
+│   │   ├── groq.py        # Cliente Groq
+│   │   ├── rag_client.py  # Cliente RAG-enhanced
+│   │   └── rag_deps.py    # Dependências RAG
+│   ├── rag/              # Sistema RAG completo
+│   │   ├── embeddings/    # Serviços de embeddings
+│   │   ├── vectorstore/   # Chroma DB & vector store
+│   │   ├── loaders/       # PDF, TXT, MD, DOCX loaders
+│   │   ├── chunking/      # Estratégias de segmentação
+│   │   └── retrieval/     # Busca semântica
+│   ├── schemas/          # Validação de dados (Chat, RAG, Cliente)
+│   └── services/         # Serviços de negócio (RAG service)
 ├── docker/                # Configuração Docker
 │   ├── docker-compose.yml # Orquestração
 │   ├── start.ps1         # Script Windows
@@ -108,8 +189,24 @@ docker-compose logs -f harmonizacao_app  # Logs API
 
 ### **Variáveis de Ambiente (.env)**
 ```env
-# Obrigatório
+# Obrigatório - LLM
 GROQ_API_KEY=sua_chave_groq_aqui
+
+# Embeddings (Escolha uma opção)
+EMBEDDING_SERVICE_TYPE=sentence_transformer  # Recomendado para início
+# OU
+EMBEDDING_SERVICE_TYPE=openai
+OPENAI_API_KEY=your_openai_api_key_here
+
+# Modelos de Embedding
+EMBEDDING_MODEL_NAME=all-MiniLM-L6-v2  # Rápido, 384 dim
+# EMBEDDING_MODEL_NAME=all-mpnet-base-v2  # Melhor qualidade, 768 dim
+# EMBEDDING_MODEL_NAME=multi-qa-MiniLM-L6-cos-v1  # Otimizado para Q&A
+
+# Processamento de Documentos RAG
+DEFAULT_CHUNK_SIZE=1000
+DEFAULT_CHUNK_OVERLAP=200
+DEFAULT_CHUNKING_STRATEGY=recursive  # Recomendado
 
 # MongoDB (Docker - padrão)
 MONGODB_URL=mongodb://admin:admin123@mongodb:27017/harmonizacao?authSource=admin
@@ -178,7 +275,90 @@ curl -X POST "http://localhost:8000/v1/cliente/formulario" \
   -d '{"nome":"João","telefone":["11999999999"],"email":["joao@email.com"],"nascimento":"1990-01-01","enderecos":[]}'
 ```
 
-## 🚨 Troubleshooting
+## � Uso da API RAG
+
+### **Upload e Indexação de Documento**
+```powershell
+# Upload simples
+curl -X POST "http://localhost:8000/v1/rag/documents/upload" \
+  -F "file=@documento.pdf" \
+  -F "tags=manual,tecnico" \
+  -F "custom_metadata={\"author\": \"João Silva\"}"
+
+# Upload + Indexação automática
+curl -X POST "http://localhost:8000/v1/rag/documents/upload-and-index" \
+  -F "file=@documento.pdf" \
+  -F "chunk_size=1500" \
+  -F "chunking_strategy=sentence"
+```
+
+### **Chat RAG**
+```powershell
+# Chat com contexto
+curl -X POST "http://localhost:8000/v1/rag/chat" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "Como funciona o processo de harmonização?",
+    "use_rag": true,
+    "max_context_chunks": 5,
+    "min_relevance_score": 0.3
+  }'
+```
+
+### **Busca de Documentos**
+```powershell
+# Busca semântica
+curl -X POST "http://localhost:8000/v1/rag/documents/search" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "harmonização tributária",
+    "max_results": 10,
+    "min_score": 0.4
+  }'
+
+# Listar documentos
+curl -X GET "http://localhost:8000/v1/rag/documents?page=1&page_size=20"
+
+# Estatísticas do sistema
+curl -X GET "http://localhost:8000/v1/rag/stats"
+```
+
+## 🧠 Estratégias de Chunking RAG
+
+### **1. Recursive Chunking (Recomendado)**
+- Mantém coerência semântica
+- Quebra em parágrafos, frases, então caracteres
+- Ideal para documentos técnicos
+
+### **2. Fixed Size Chunking**
+- Tamanho fixo com sobreposição
+- Simples e previsível
+- Bom para textos uniformes
+
+### **3. Sentence Chunking**
+- Baseado em frases completas
+- Preserva contexto linguístico
+- Ideal para textos narrativos
+
+## ⚙️ Modelos de Embedding
+
+### **Sentence Transformers (Recomendado)**
+```python
+# Modelos disponíveis:
+"all-MiniLM-L6-v2"          # 384 dim, rápido, uso geral
+"all-mpnet-base-v2"         # 768 dim, alta qualidade
+"multi-qa-MiniLM-L6-cos-v1" # 384 dim, otimizado para Q&A
+```
+
+### **OpenAI Embeddings**
+```python
+# Modelos disponíveis:
+"text-embedding-3-small"    # 1536 dim, custo-efetivo
+"text-embedding-3-large"    # 3072 dim, máxima qualidade
+"text-embedding-ada-002"    # 1536 dim, legado
+```
+
+## �🚨 Troubleshooting
 
 ### **Problemas com PowerShell (Windows)**
 
@@ -223,7 +403,64 @@ docker-compose up --build -d
    docker-compose up --build -d
    ```
 
-## 💡 Dicas
+## � Deploy e Produção
+
+### **Docker Customizado**
+```dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY . .
+EXPOSE 8000
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+```
+
+### **Docker Compose Avançado**
+```yaml
+version: '3.8'
+services:
+  harmonizacao-api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - EMBEDDING_SERVICE_TYPE=${EMBEDDING_SERVICE_TYPE}
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+```
+
+## 📊 Monitoramento
+
+### **Métricas Disponíveis**
+- Total de documentos indexados
+- Performance de busca semântica
+- Estatísticas de embeddings
+- Status do vector store
+- Health checks de conexões
+
+### **Logs Estruturados**
+```python
+import logging
+logging.basicConfig(level=logging.INFO)
+# Logs disponíveis em ./logs/
+```
+
+## 🔒 Segurança
+
+- ✅ Validação de tipos de arquivo (PDF, TXT, MD, DOCX)
+- ✅ Limite de tamanho de upload
+- ✅ Sanitização de metadados
+- ✅ Autenticação MongoDB
+- ⚠️ Rate limiting (recomendado para produção)
+- ⚠️ HTTPS/SSL (configurar para produção)
+
+## �💡 Dicas
 
 - ✅ Use `.\start.ps1` para inicialização automática
 - ✅ Acesse `/docs` para testar endpoints interativamente  
@@ -238,3 +475,9 @@ docker-compose up --build -d
 - [FastAPI Docs](https://fastapi.tiangolo.com/)
 - [MongoDB Docs](https://www.mongodb.com/docs/)
 - [Groq API](https://groq.com/)
+- [Sentence Transformers](https://www.sbert.net/)
+- [Chroma DB](https://www.trychroma.com/)
+
+---
+
+**Harmonização AI** - Transformando conhecimento em inteligência acessível 🚀
