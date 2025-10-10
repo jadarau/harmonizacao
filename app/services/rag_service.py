@@ -2,6 +2,9 @@
 from __future__ import annotations
 import uuid
 import asyncio
+import json
+import os
+from pathlib import Path
 from typing import BinaryIO, Dict, Any, List
 from datetime import datetime
 
@@ -23,15 +26,101 @@ from app.schemas.rag import (
 class RAGService:
     """Main RAG service for document management and retrieval."""
     
-    def __init__(self):
-        """Initialize RAG service with all components."""
+    def __init__(self, storage_path: str = "./data/rag"):
+        """Initialize RAG service with all components.
+        
+        Args:
+            storage_path: Path to store RAG data locally
+        """
+        self.storage_path = Path(storage_path)
+        self.documents_file = self.storage_path / "documents.json"
+        self.content_dir = self.storage_path / "content"
+        
+        # Create storage directories
+        self.storage_path.mkdir(parents=True, exist_ok=True)
+        self.content_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Initialize components
         self.loader_factory = get_loader_factory()
         self.embedding_service = get_embedding_service()
         self.vector_store = get_vector_store()
         self.retrieval_service = get_retrieval_service()
+        self.chunking_factory = ChunkingFactory()
         
-        # In-memory document storage (in production, use a database)
+        # Load existing documents from storage
         self._documents: Dict[str, Document] = {}
+        self._load_documents_from_storage()
+    
+    def _load_documents_from_storage(self):
+        """Load documents from local JSON storage."""
+        try:
+            if self.documents_file.exists():
+                with open(self.documents_file, 'r', encoding='utf-8') as f:
+                    documents_data = json.load(f)
+                
+                for doc_id, doc_data in documents_data.items():
+                    # Load document content from separate file
+                    content_file = self.content_dir / f"{doc_id}.txt"
+                    content = ""
+                    if content_file.exists():
+                        with open(content_file, 'r', encoding='utf-8') as cf:
+                            content = cf.read()
+                    
+                    # Reconstruct document object
+                    document = Document.from_dict({**doc_data, "content": content})
+                    self._documents[doc_id] = document
+                    
+                print(f"Loaded {len(self._documents)} documents from storage")
+            else:
+                print("No existing documents found in storage")
+                
+        except Exception as e:
+            print(f"Error loading documents from storage: {e}")
+            self._documents = {}
+    
+    def _save_documents_to_storage(self):
+        """Save documents to local JSON storage."""
+        try:
+            # Prepare documents data (without content)
+            documents_data = {}
+            for doc_id, document in self._documents.items():
+                # Save content to separate file
+                content_file = self.content_dir / f"{doc_id}.txt"
+                with open(content_file, 'w', encoding='utf-8') as cf:
+                    cf.write(document.content or "")
+                
+                # Save metadata to JSON (without content to keep file smaller)
+                doc_dict = document.to_dict()
+                doc_dict.pop('content', None)  # Remove content from JSON
+                documents_data[doc_id] = doc_dict
+            
+            # Save to JSON file
+            with open(self.documents_file, 'w', encoding='utf-8') as f:
+                json.dump(documents_data, f, indent=2, default=str)
+                
+            print(f"Saved {len(self._documents)} documents to storage")
+            
+        except Exception as e:
+            print(f"Error saving documents to storage: {e}")
+    
+    def _save_document(self, document: Document):
+        """Save a single document to storage."""
+        self._documents[document.id] = document
+        self._save_documents_to_storage()
+    
+    def _delete_document_from_storage(self, document_id: str):
+        """Delete document from storage."""
+        # Remove from memory
+        if document_id in self._documents:
+            del self._documents[document_id]
+        
+        # Remove content file
+        content_file = self.content_dir / f"{document_id}.txt"
+        if content_file.exists():
+            content_file.unlink()
+        
+        # Update JSON file
+        self._save_documents_to_storage()
     
     async def upload_document(
         self,
@@ -62,8 +151,8 @@ class RAGService:
                 }
             )
             
-            # Store document
-            self._documents[document.id] = document
+            # Store document with persistence
+            self._save_document(document)
             
             return DocumentUploadResponse(
                 document_id=document.id,
@@ -155,6 +244,9 @@ class RAGService:
             document.status = DocumentStatus.INDEXED
             document.metadata.processed_at = datetime.utcnow()
             
+            # Save updated document to storage
+            self._save_document(document)
+            
             processing_time = (datetime.utcnow() - start_time).total_seconds()
             
             return DocumentIndexResponse(
@@ -168,6 +260,7 @@ class RAGService:
             # Update document status on failure
             if document_id in self._documents:
                 self._documents[document_id].status = DocumentStatus.FAILED
+                self._save_document(self._documents[document_id])
             
             processing_time = (datetime.utcnow() - start_time).total_seconds()
             
@@ -291,8 +384,8 @@ class RAGService:
             # Delete from vector store
             await self.vector_store.delete_document(document_id)
             
-            # Delete from memory storage
-            del self._documents[document_id]
+            # Delete from persistent storage
+            self._delete_document_from_storage(document_id)
             
             return DocumentDeleteResponse(
                 document_id=document_id,
