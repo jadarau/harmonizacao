@@ -6,7 +6,6 @@ from app.llm.client import LlmClient
 from app.llm.groq import GroqLlmClient
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.schemas.rag import RAGChatRequest, RAGChatResponse
-from app.services.rag_service import get_rag_service
 
 
 class RAGLlmClient:
@@ -19,7 +18,15 @@ class RAGLlmClient:
             base_client: Base LLM client (e.g., GroqLlmClient)
         """
         self.base_client = base_client
-        self.rag_service = get_rag_service()
+        self._rag_service = None
+    
+    @property
+    def rag_service(self):
+        """Get RAG service instance (lazy loading)."""
+        if self._rag_service is None:
+            from app.services.rag_service import get_rag_service
+            self._rag_service = get_rag_service()
+        return self._rag_service
     
     async def chat(self, req: ChatRequest) -> ChatResponse:
         """Standard chat without RAG."""
